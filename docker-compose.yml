@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: checkout
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  api:
+    build: .
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    volumes:
+      - .:/app
+
+  outbox-relay:
+    build: .
+    command: python -m src.infrastructure.messaging.outbox_relay
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - .:/app
+
+  worker:
+    build: .
+    command: python -m src.worker.order_lifecycle_worker
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
