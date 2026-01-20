@@ -1,0 +1,30 @@
+@startuml
+title Order State Machine
+
+[*] --> PENDING
+
+PENDING --> CONFIRMED : payment success
+PENDING --> FAILED : payment failed
+PENDING --> EXPIRED : worker expiration
+
+CONFIRMED --> [*]
+FAILED --> [*]
+EXPIRED --> [*]
+
+note right of PENDING
+  - Checkout created this state
+  - Expiration handled asynchronously
+  - Idempotent updates required
+end note
+
+note right of CONFIRMED
+  - Payment processed
+  - Inventory consumed
+end note
+
+note right of EXPIRED
+  - Worker restores inventory
+  - Order marked expired
+end note
+
+@enduml

@@ -1,0 +1,49 @@
+@startuml
+title ScaleTicket - Data Model
+
+entity User {
+    *id : UUID
+    email : string
+    created_at : datetime
+}
+
+entity Event {
+    *id : UUID
+    name : string
+    starts_at : datetime
+    status: EventStatus
+    venue: string
+}
+
+entity TicketInventory {
+    *event_id : UUID
+    remaining_tickets : int
+}
+
+entity Order {
+    *id : UUID
+    user_id : UUID
+    event_id : UUID
+    quantity : int
+    status : OrderStatus
+    expires_at : datetime
+    idempotency_key : string
+}
+
+enum OrderStatus {
+    PENDING
+    CONFIRMED
+    EXPIRED
+    FAILED
+}
+
+enum EventStatus {
+     SCHEDULED
+     CANCELLED
+     SOLD_OUT
+}
+
+User ||--o{ Order
+Event ||--|| TicketInventory
+Event ||--o{ Order
+@enduml

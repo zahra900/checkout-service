@@ -1,0 +1,75 @@
+@startuml
+title Checkout Sequence (Senior / Review-Proof)
+
+actor Client
+participant "API (FastAPI)" as API
+database "PostgreSQL" as DB
+participant "Outbox Relay" as Relay
+participant "Message Broker" as MQ
+participant Worker
+
+== Request ==
+Client -> API: POST /checkout\n(JWT, cart_id, idempotency_key)
+note right of API
+JWT verified locally (RS256)
+Idempotency enforced by DB
+end note
+
+== Atomic Checkout Transaction ==
+API -> DB: BEGIN
+
+API -> DB: UPDATE inventory
+note right of DB
+Optimistic locking:
+UPDATE inventory
+SET qty = qty - ?, version = version + 1
+WHERE event_id = ?
+  AND qty >= ?
+  AND version = ?
+end note
+
+alt inventory update fails
+    API -> DB: ROLLBACK
+    API --> Client: 409 Sold Out
+else inventory updated
+
+    API -> DB: INSERT INTO orders
+    note right of DB
+UNIQUE(user_id, idempotency_key)
+ensures exactly-once intent
+    end note
+
+    API -> DB: INSERT INTO outbox_messages
+    note right of DB
+type = ORDER_CREATED
+payload = order_id
+    end note
+
+    API -> DB: COMMIT
+end
+
+API --> Client: 201 Created (order_id, PENDING)
+
+== Asynchronous Processing ==
+group Transactional Outbox
+    Relay -> DB: Fetch NEW outbox_messages
+    Relay -> MQ: Publish ORDER_CREATED
+    Relay -> DB: Mark message SENT
+end
+
+group Order Lifecycle
+    Worker -> DB: Start expiration timer (idempotent)
+    Worker -> External: Process payment
+    alt payment fails
+        Worker -> DB: Cancel order + restore inventory
+    end
+end
+
+== Recovery ==
+note right of DB
+Periodic reconciliation:
+- Expire PENDING orders past TTL
+- Re-publish unsent outbox messages
+end note
+
+@enduml
