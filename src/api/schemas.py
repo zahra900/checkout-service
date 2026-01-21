@@ -12,3 +12,8 @@ class CheckoutResponse(BaseModel):
     status: str
     event_id: int
     quantity: int
+
+
+class UserResponse(BaseModel):
+    id: int
+    message: str
