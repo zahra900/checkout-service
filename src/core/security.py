@@ -6,7 +6,7 @@ from src.core.config import settings
 security = HTTPBearer()
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     """Validate RS256 JWT and extract user_id."""
     try:
         # TODO: Fetch public key from JWT_PUBLIC_KEY_URL

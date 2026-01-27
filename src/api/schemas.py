@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from sqlalchemy import UUID
 
 
 class CheckoutRequest(BaseModel):
@@ -15,5 +16,5 @@ class CheckoutResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     message: str
