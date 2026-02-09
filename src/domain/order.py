@@ -1,16 +1,14 @@
-from enum import Enum
-from dataclasses import dataclass
-from datetime import datetime
+from enum import StrEnum
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     FAILED = "FAILED"
     EXPIRED = "EXPIRED"
 
 
-@dataclass
+""" @dataclass
 class Order:
     id: int | None
     user_id: str
@@ -33,4 +31,4 @@ class Order:
     def expire(self):
         if self.status != OrderStatus.PENDING:
             raise ValueError("Only PENDING orders can expire")
-        self.status = OrderStatus.EXPIRED
+        self.status = OrderStatus.EXPIRED """

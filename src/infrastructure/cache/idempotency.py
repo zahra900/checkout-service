@@ -10,5 +10,7 @@ class IdempotencyCache:
     async def get_cached_response(self, idempotency_key: str) -> str | None:
         return await self.redis.get(f"idempotency:{idempotency_key}")
 
-    async def cache_response(self, idempotency_key: str, response: str, ttl: int = 3600):
+    async def cache_response(
+        self, idempotency_key: str, response: str, ttl: int = 3600
+    ):
         await self.redis.set(f"idempotency:{idempotency_key}", response, ex=ttl)

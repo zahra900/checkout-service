@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 from src.domain.user.user import UserRole
 
 
@@ -17,9 +19,8 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: UUID
     created_at: datetime
-
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserInDB(UserRead):
+class UserInDB(UserBase):
     hashed_password: str

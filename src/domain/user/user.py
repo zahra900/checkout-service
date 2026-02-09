@@ -1,8 +1,9 @@
-from enum import Enum
-from uuid import UUID
 from datetime import datetime
+from enum import StrEnum
+from uuid import UUID
 
-class UserRole(str, Enum):
+
+class UserRole(StrEnum):
     ADMIN = "admin"
     USER = "user"
 
@@ -23,3 +24,4 @@ class User:
         self.role = role
         self.created_at = created_at
         self.hashed_password = hashed_password
+    

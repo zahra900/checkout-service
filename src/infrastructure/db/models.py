@@ -1,28 +1,49 @@
-from enum import Enum
-from sqlalchemy import UUID, Column, ForeignKey, Integer, String, DateTime, Enum as SAEnum
+from enum import StrEnum
+from datetime import datetime
+
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, UUID, DateTime, Enum as SQLEnum
+import uuid
+
+from src.domain.user.user import User, UserRole
 from src.infrastructure.db.database import Base
 
-class EventStatus(str, Enum):
-    SCHEDULED =  "scheduled"
+
+class EventStatus(StrEnum):
+    SCHEDULED = "scheduled"
     CANCELLED = "cancelled"
     SOLD_OUT = "sold_out"
 
-class OrderStatus(str, Enum):
+
+class OrderStatus(StrEnum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     EXPIRED = "expired"
     FAILED = "failed"
 
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(UUID(as_uuid=True), primary_key=True, index=True)
-    username = Column(String, nullable=False)
-    email = Column(String, index=True, unique=True, nullable=False)
-    created_at = Column(DateTime, unique=True)
-    hashed_password = Column(String, nullable=False)
-    role =  Column(String, nullable=False)
 
-class Event(Base):
+class UserORM(Base):
+    __tablename__ = "users"
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    username: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    @classmethod
+    def from_entity(cls, entity: User):
+        return cls(id=entity.id,
+            username=entity.username,
+            email=entity.email,
+            hashed_password=entity.hashed_password,
+            role=entity.role,
+            created_at=entity.created_at,
+        )
+
+
+""" class Event(Base):
     __tablename__ = 'event'
     id = Column(UUID(as_uuid=True), primary_key=True, index=True)
     name = Column(String, nullable=False)
@@ -38,6 +59,4 @@ class Order(Base):
     quantity = Column(Integer, nullable=False)
     status = Column(SAEnum(OrderStatus), nullable=False)
     expires_at = Column(DateTime)
-    idempotency_key = Column(String)
-
-
+    idempotency_key = Column(String) """

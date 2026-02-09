@@ -1,4 +1,3 @@
-import pytest
 from src.domain.order import Order, OrderStatus
 
 

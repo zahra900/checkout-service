@@ -1,32 +1,41 @@
-from fastapi import Depends
-from src.api.v1.schemas.user import UserInDB
-from src.api.v1.schemas.user import UserCreate
-from sqlalchemy.orm import Session
 import uuid
-from src.infrastructure.db.database import get_db
-from src.infrastructure.db.models import User
-from src.infrastructure.db.dependencies import db_dependency
 from datetime import datetime
-from passlib.context import CryptContext
-from typing import Annotated
 
-import pytz
+from datetime import timezone
+from dataclasses import asdict
 
-bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def create_user(user: UserCreate, db: Session):
-    user_id = str(uuid.uuid4())
-    create_user = UserInDB(id=user_id, email=user.email, hashed_password=bcrypt_context.hash(user.password), created_at=datetime.now(tz=pytz.UTC))
-    db.add(create_user)
-    db.commit()
-    db.refresh(create_user)
-    return create_user
+from src.application.dtos import UserCreateDTO
+from src.application.exceptions import AuthenticationFailed, UserNotFound
+from src.domain.user.user import User
+from src.domain.user.user_repository import UserRepository
+from src.security.password_hasher import hash_password, verify_password
+from src.security.token_provider import create_access_token
 
 
-def authenticate_user(username: str, password:str, db: Session):
-    user = db.query(UserInDB).filter(UserInDB.username == username).first()
+def create_user(user_dto: UserCreateDTO, user_repo: UserRepository):
+    existing = user_repo.get_by_email(user_dto.email)
+    if existing:
+        raise ValueError("Email already registered")
+    print()
+    hashed_password = hash_password(user_dto.password)
+    print("***********************************************************************")
+    print(asdict(user_dto))
+    new_user = User(
+        id=str(uuid.uuid4()),
+        email=user_dto.email,
+        username=user_dto.username,
+        hashed_password=hash_password(user_dto.password),
+        role=user_dto.role,
+        created_at=datetime.now(timezone.utc),
+    )
+    return user_repo.add(new_user)
+
+
+def authenticate_user(username: str, password: str, user_repo: UserRepository):
+    user = user_repo.get_by_username(username)
     if not user:
-        return False
-    if not bcrypt_context.verify(password, user.hashed_password):
-        return False
-    return True
+        raise UserNotFound()
+    if not verify_password(password, user.hashed_password):
+        raise AuthenticationFailed()
+    token = create_access_token(user.username, user.id)
+    return token

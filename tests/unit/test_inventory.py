@@ -1,5 +1,6 @@
 import pytest
-from src.domain.inventory import Inventory, InsufficientInventoryError
+
+from src.domain.inventory import InsufficientInventoryError, Inventory
 
 
 def test_reserve_success():

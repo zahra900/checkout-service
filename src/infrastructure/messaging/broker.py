@@ -1,4 +1,5 @@
 import aio_pika
+
 from src.core.config import settings
 
 
